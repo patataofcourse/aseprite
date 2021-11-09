@@ -9,8 +9,10 @@
 * [Compiling](#compiling)
   * [Windows details](#windows-details)
     * [MinGW](#mingw)
-  * [macOS details](#macos-details)
+  * [macOS details (x86)](#macos-details-x86)
     * [Issues with Retina displays](#issues-with-retina-displays)
+  * [macOS details (arm64)](#macos-details-arm64)
+    * [Compiling Skia](#compiling-skia)
   * [Linux details](#linux-details)
 * [Using shared third party libraries](#using-shared-third-party-libraries)
 
@@ -152,7 +154,7 @@ the first time in case that you don't know or don't want to modify the
 
 More information in [issue #2449](https://github.com/aseprite/aseprite/issues/2449)
 
-## macOS details
+## macOS details (x86)
 
 Run `cmake` with the following parameters and then `ninja`:
 
@@ -183,6 +185,43 @@ but it could be different in your Mac.
 If you have a Retina display, check the following issue:
 
   https://github.com/aseprite/aseprite/issues/589
+
+## macOS details (arm64)
+
+You'll need to compile Skia first, since there's no pre-built binaries for ARM Mac PCs. See [Compiling Skia](#compiling-skia)
+
+Run `cmake` with the following parameters and then `ninja`:
+
+```
+    cd aseprite
+    mkdir build
+    cd build
+    cmake \
+      -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+      -DCMAKE_OSX_ARCHITECTURES=arm64 \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+      -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk \
+      -DLAF_BACKEND=skia \
+      -DSKIA_DIR=$HOME/deps/skia \
+      -DSKIA_LIBRARY_DIR=$HOME/deps/skia/out/Release-arm64 \
+      -DSKIA_LIBRARY=$HOME/deps/skia/out/Release-arm64/libskia.a \
+      -G Ninja \
+      ..
+    ninja aseprite
+```
+
+In this case, `$HOME/deps/skia` is the directory where Skia was
+compiled or downloaded.  Make sure that `CMAKE_OSX_SYSROOT` is
+pointing to the correct SDK directory (in this case
+`/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.3.sdk`),
+but it could be different in your Mac.
+
+### Compiling Skia
+
+```
+gn gen out/Release-arm64 --args="is_debug=false is_official_build=true skia_use_system_expat=false skia_use_system_icu=false skia_use_system_libjpeg_turbo=false skia_use_system_libpng=false skia_use_system_libwebp=false skia_use_system_zlib=false skia_use_sfntly=false skia_use_freetype=true skia_use_harfbuzz=true skia_pdf_subset_harfbuzz=true skia_use_system_freetype2=false skia_use_system_harfbuzz=false target_cpu=\"arm64\" extra_cflags=[\"-stdlib=libc++\", \"-mmacosx-version-min=11.0\"] extra_cflags_cc=[\"-frtti\"]"
+ninja -C out/Release-arm64 skia modules
+```
 
 ## Linux details
 
